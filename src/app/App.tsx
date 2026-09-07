@@ -1,33 +1,31 @@
-import { CalendarDays, ChevronLeft, ChevronRight, Plus, Clock3, CalendarRange, Settings, X } from 'lucide-react';
-import { addDays, format, startOfWeek } from 'date-fns';
+import { CalendarDays, ChevronLeft, ChevronRight, Plus, Clock3, CalendarRange, Settings, AlertTriangle, Repeat2 } from 'lucide-react';
+import { addDays, format, startOfWeek, parseISO } from 'date-fns';
 import { pt } from 'date-fns/locale';
 import { useEffect, useMemo, useState } from 'react';
 import type { Activity } from '../models/activity';
+import type { Recurrence } from '../models/recurrence';
 import { useActivityStore } from '../stores/activityStore';
 import { useCatalogStore } from '../stores/catalogStore';
 import { ActivityForm } from '../components/activity/ActivityForm';
-import { activityStyle } from '../utils/time';
+import { activityStyle, toMinutes } from '../utils/time';
 import { TodayPage } from '../pages/TodayPage';
 import { PeriodsPage } from '../pages/PeriodsPage';
 import { SettingsPage } from '../pages/SettingsPage';
+import { db } from '../db/database';
+import { expandActivitiesForRange } from '../services/recurrenceService';
+import { findConflicts } from '../services/conflictService';
 
-const HOURS = Array.from({ length: 15 }, (_, i) => i + 7);
-type View = 'week'|'today'|'periods'|'settings';
-
+const HOURS=Array.from({length:15},(_,i)=>i+7);type View='week'|'today'|'periods'|'settings';
 export function App(){
- const [selectedDate,setSelectedDate]=useState(new Date()); const [view,setView]=useState<View>('week'); const [editing,setEditing]=useState<Activity|null>(null); const [creating,setCreating]=useState(false);
- const activities=useActivityStore(s=>s.activities); const load=useActivityStore(s=>s.load); const loadCatalog=useCatalogStore(s=>s.load); const weekStart=startOfWeek(selectedDate,{weekStartsOn:1});
- useEffect(()=>{void load();void loadCatalog()},[load,loadCatalog]);
- const days=useMemo(()=>Array.from({length:7},(_,i)=>addDays(weekStart,i)),[weekStart]);
- const moveWeek=(n:number)=>setSelectedDate(addDays(selectedDate,n*7));
- const openCreate=(date=selectedDate)=>{setSelectedDate(date);setCreating(true)};
- const nav=(v:View)=>{setView(v);if(v==='today')setSelectedDate(new Date())};
- const categoryName=(id?:string)=>useCatalogStore.getState().categories.find(c=>c.id===id)?.name;
- return <main className="app-shell"><header className="topbar"><div><div className="brand">WeekFlow</div><div className="subtitle">Planeador semanal</div></div><CalendarDays size={22}/></header>
- {view==='week' && <><section className="week-toolbar"><button onClick={()=>moveWeek(-1)} aria-label="Semana anterior"><ChevronLeft/></button><button className="today-button" onClick={()=>setSelectedDate(new Date())}>{format(weekStart,'d MMM',{locale:pt})} — {format(addDays(weekStart,6),'d MMM yyyy',{locale:pt})}</button><button onClick={()=>moveWeek(1)} aria-label="Semana seguinte"><ChevronRight/></button></section><section className="calendar"><div className="time-column"><div className="corner"/>{HOURS.map(h=><div className="time-label" key={h}>{String(h).padStart(2,'0')}:00</div>)}</div><div className="days-grid">{days.map(day=>{const key=format(day,'yyyy-MM-dd');const dayActivities=activities.filter(a=>a.date===key);return <div className={`day-column ${key===format(selectedDate,'yyyy-MM-dd')?'selected':''}`} key={key} onClick={()=>setSelectedDate(day)}><div className="day-header"><span>{format(day,'EEE',{locale:pt}).slice(0,3)}</span><strong>{format(day,'d')}</strong></div><div className="day-body">{HOURS.map(h=><div className="hour-cell" key={h} onDoubleClick={()=>openCreate(day)}/>)}{dayActivities.map(a=>{const st=activityStyle(a.startTime,a.endTime);return <button className={`activity-card ${a.completed?'completed':''}`} style={st} key={a.id} onClick={e=>{e.stopPropagation();setEditing(a)}}><span>{a.icon??'📅'}</span><b>{a.title}</b><small>{a.startTime}–{a.endTime}{categoryName(a.categoryId)?` · ${categoryName(a.categoryId)}`:''}</small></button>})}</div></div>})}</div></section></>}
+ const [selectedDate,setSelectedDate]=useState(new Date());const [view,setView]=useState<View>('week');const [editing,setEditing]=useState<Activity|null>(null);const [creating,setCreating]=useState(false);const [recurrences,setRecurrences]=useState<Recurrence[]>([]);const [dragging,setDragging]=useState<string|null>(null);
+ const activities=useActivityStore(s=>s.activities);const load=useActivityStore(s=>s.load);const reschedule=useActivityStore(s=>s.reschedule);const loadCatalog=useCatalogStore(s=>s.load);const weekStart=startOfWeek(selectedDate,{weekStartsOn:1});
+ useEffect(()=>{void load();void loadCatalog();void db.recurrences.toArray().then(setRecurrences)},[load,loadCatalog]);
+ const days=useMemo(()=>Array.from({length:7},(_,i)=>addDays(weekStart,i)),[weekStart]);const displayed=useMemo(()=>expandActivitiesForRange(activities,recurrences,weekStart,addDays(weekStart,6)),[activities,recurrences,weekStart]);
+ const moveWeek=(n:number)=>setSelectedDate(addDays(selectedDate,n*7));const openCreate=(date=selectedDate)=>{setSelectedDate(date);setCreating(true)};const nav=(v:View)=>{setView(v);if(v==='today')setSelectedDate(new Date())};
+ const category=(id?:string)=>useCatalogStore.getState().categories.find(c=>c.id===id);const drop=(e:React.DragEvent<HTMLDivElement>,day:Date)=>{e.preventDefault();const id=dragging;if(!id)return;const rect=e.currentTarget.getBoundingClientRect();const y=e.clientY-rect.top;const minutes=Math.max(7*60,Math.min(21*60-15,7*60+Math.round(y/1.2/15)*15));const original=activities.find(a=>a.id===id);if(!original)return;const duration=toMinutes(original.endTime)-toMinutes(original.startTime);const start=Math.floor(minutes/60).toString().padStart(2,'0')+':'+String(minutes%60).padStart(2,'0');const endMinutes=Math.min(21*60,minutes+duration);const end=Math.floor(endMinutes/60).toString().padStart(2,'0')+':'+String(endMinutes%60).padStart(2,'0');void reschedule(id,format(day,'yyyy-MM-dd'),start,end);setDragging(null)};
+ return <main className="app-shell"><header className="topbar"><div><div className="brand">WeekFlow</div><div className="subtitle">Planeador semanal · V0.3</div></div><CalendarDays size={22}/></header>
+ {view==='week'&&<><section className="week-toolbar"><button onClick={()=>moveWeek(-1)} aria-label="Semana anterior"><ChevronLeft/></button><button className="today-button" onClick={()=>setSelectedDate(new Date())}>{format(weekStart,'d MMM',{locale:pt})} — {format(addDays(weekStart,6),'d MMM yyyy',{locale:pt})}</button><button onClick={()=>moveWeek(1)} aria-label="Semana seguinte"><ChevronRight/></button></section><section className="feature-strip"><span><Repeat2 size={16}/> Recorrências ativas: {recurrences.length}</span><span><AlertTriangle size={16}/> Conflitos: {displayed.filter(a=>findConflicts(a,displayed).length>0).length/2}</span></section><section className="calendar"><div className="time-column"><div className="corner"/>{HOURS.map(h=><div className="time-label" key={h}>{String(h).padStart(2,'0')}:00</div>)}</div><div className="days-grid">{days.map(day=>{const key=format(day,'yyyy-MM-dd');const dayActivities=displayed.filter(a=>a.date===key);return <div className={`day-column ${key===format(selectedDate,'yyyy-MM-dd')?'selected':''}`} key={key} onClick={()=>setSelectedDate(day)}><div className="day-header"><span>{format(day,'EEE',{locale:pt}).slice(0,3)}</span><strong>{format(day,'d')}</strong></div><div className="day-body" onDragOver={e=>e.preventDefault()} onDrop={e=>drop(e,day)}>{HOURS.map(h=><div className="hour-cell" key={h} onDoubleClick={()=>openCreate(day)}/>)}{dayActivities.map(a=>{const st=activityStyle(a.startTime,a.endTime);const conflicts=findConflicts(a,displayed).length>0;const cat=category(a.categoryId);const recurring=Boolean(a.recurrenceId);const realId=a.id.includes('__')?a.id.split('__')[0]:a.id;return <button draggable={!recurring} onDragStart={()=>setDragging(realId)} onDragEnd={()=>setDragging(null)} className={`activity-card ${a.completed?'completed':''} ${conflicts?'conflict':''} ${recurring?'recurring':''}`} style={{...st,backgroundColor:cat?.color??a.color}} key={a.id} onClick={e=>{e.stopPropagation();setEditing(activities.find(x=>x.id===realId)??a)}} title={conflicts?'Conflito de horário':''}><span>{a.icon??'📅'}</span><b>{a.title}</b><small>{a.startTime}–{a.endTime}{cat?` · ${cat.name}`:''}{recurring?' · ↻':''}</small></button>})}</div></div>})}</div></section></>}
  {view==='today'&&<TodayPage onEdit={setEditing}/>} {view==='periods'&&<PeriodsPage/>} {view==='settings'&&<SettingsPage/>}
- <button className="fab" onClick={()=>openCreate()} aria-label="Adicionar atividade"><Plus size={26}/></button>
- <nav className="bottom-nav"><button className={view==='week'?'active':''} onClick={()=>nav('week')}><CalendarDays/><span>Semana</span></button><button className={view==='today'?'active':''} onClick={()=>nav('today')}><Clock3/><span>Hoje</span></button><button className={view==='periods'?'active':''} onClick={()=>nav('periods')}><CalendarRange/><span>Períodos</span></button><button className={view==='settings'?'active':''} onClick={()=>nav('settings')}><Settings/><span>Definições</span></button></nav>
- {(creating||editing)&&<ActivityForm date={editing?.date ?? format(selectedDate,'yyyy-MM-dd')} activity={editing} onClose={()=>{setCreating(false);setEditing(null);void load()}}/>}
- </main>
+ <button className="fab" onClick={()=>openCreate()} aria-label="Adicionar atividade"><Plus size={26}/></button><nav className="bottom-nav"><button className={view==='week'?'active':''} onClick={()=>nav('week')}><CalendarDays/><span>Semana</span></button><button className={view==='today'?'active':''} onClick={()=>nav('today')}><Clock3/><span>Hoje</span></button><button className={view==='periods'?'active':''} onClick={()=>nav('periods')}><CalendarRange/><span>Períodos</span></button><button className={view==='settings'?'active':''} onClick={()=>nav('settings')}><Settings/><span>Definições</span></button></nav>
+ {(creating||editing)&&<ActivityForm date={editing?.date??format(selectedDate,'yyyy-MM-dd')} activity={editing} onClose={()=>{setCreating(false);setEditing(null);void load();void db.recurrences.toArray().then(setRecurrences)}}/>}</main>
 }

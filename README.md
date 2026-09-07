@@ -1,30 +1,40 @@
-# WeekFlow — Pacote de Desenvolvimento 2
+# WeekFlow
 
-Pacote 2 continua diretamente o Pacote 1 e transforma o protótipo num MVP navegável.
+PWA de planeamento semanal, offline-first, construída com React + TypeScript + Vite + Dexie/IndexedDB.
 
-## Incluído
-- CRUD real de atividades: criar, editar, eliminar e marcar como concluída.
-- ActivityForm em bottom-sheet responsivo.
-- Validação de título e horários.
-- Categorias e pessoas carregadas da IndexedDB.
-- Navegação funcional: Semana, Hoje, Períodos e Definições.
-- Vista Hoje com lista ordenada e conclusão rápida.
-- Repositories para atividades, categorias, pessoas e períodos.
-- Zustand para estado de UI/dados carregados.
-- Double-click numa célula da semana para criar atividade nesse dia.
-- Dados continuam locais e offline via IndexedDB.
+## Pacote 3 — v0.3.0
 
-## Executar
+Esta versão acrescenta recorrências, deteção de conflitos, drag & drop para reagendamento, gestão de períodos e backup/importação JSON.
+
+## Desenvolvimento
+
 ```bash
 npm install
 npm run dev
 ```
-Abrir o endereço indicado pelo Vite, normalmente http://localhost:5173/
 
-## Build
+Build de produção:
+
 ```bash
 npm run build
 ```
 
-## Próximo pacote sugerido
-Pacote 3: recorrências, deteção visual de conflitos, gestão completa de categorias/pessoas/períodos, drag & drop, melhoria mobile e backup/importação JSON.
+Testes:
+
+```bash
+npm run test
+```
+
+Typecheck:
+
+```bash
+npm run typecheck
+```
+
+## Dados
+
+Os dados da aplicação são locais no dispositivo, através de IndexedDB. O backup pode ser exportado em **Definições → Backup**.
+
+## Git
+
+A versão deste pacote é `v0.3.0`. Recomenda-se criar um commit e uma tag Git com esse número depois de validar a aplicação localmente.
