@@ -2,9 +2,9 @@
 
 PWA de planeamento semanal, offline-first, construída com React + TypeScript + Vite + Dexie/IndexedDB.
 
-## Pacote 3 — v0.3.0
+## Pacote 4 — v0.4.0
 
-Esta versão acrescenta recorrências, deteção de conflitos, drag & drop para reagendamento, gestão de períodos e backup/importação JSON.
+Esta versão acrescenta calendário configurável, tema claro/escuro/automático, pesquisa de atividades e gestão de categorias e pessoas, mantendo as funcionalidades do Pacote 3.
 
 ## Desenvolvimento
 
