@@ -38,3 +38,6 @@ Os dados da aplicação são locais no dispositivo, através de IndexedDB. O bac
 ## Git
 
 A versão deste pacote é `v0.3.0`. Recomenda-se criar um commit e uma tag Git com esse número depois de validar a aplicação localmente.
+
+### Vistas e impressão
+O calendário pode ser consultado nas vistas **Semana**, **Mês** e **Ano**. A partir da barra superior é possível imprimir diretamente a vista semanal, mensal ou anual. A impressão é preparada para papel A4, com calendário mensal e resumo anual compactos.
