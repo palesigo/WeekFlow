@@ -31,3 +31,7 @@ export function expandActivitiesForRange(activities: Activity[], recurrences: Re
   }
   return result;
 }
+
+export function isRecurringActivity(activity: Activity): boolean {
+  return Boolean(activity.recurrenceId);
+}

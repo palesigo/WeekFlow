@@ -3,16 +3,11 @@ import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
-  base: "/WeekFlow/",
-
   plugins: [
     react(),
-
     VitePWA({
       registerType: "autoUpdate",
-
       includeAssets: ["favicon.svg", "apple-touch-icon.png"],
-
       manifest: {
         name: "WeekFlow",
         short_name: "WeekFlow",
@@ -20,24 +15,15 @@ export default defineConfig({
         theme_color: "#111827",
         background_color: "#f8fafc",
         display: "standalone",
-        start_url: "/WeekFlow/",
+        start_url: "/",
         icons: [
-          {
-            src: "/WeekFlow/pwa-192x192.png",
-            sizes: "192x192",
-            type: "image/png",
-          },
-          {
-            src: "/WeekFlow/pwa-512x512.png",
-            sizes: "512x512",
-            type: "image/png",
-          },
-        ],
+          { src: "/pwa-192x192.png", sizes: "192x192", type: "image/png" },
+          { src: "/pwa-512x512.png", sizes: "512x512", type: "image/png" }
+        ]
       },
-
       workbox: {
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
-      },
-    }),
-  ],
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"]
+      }
+    })
+  ]
 });
