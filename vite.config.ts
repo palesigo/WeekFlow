@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
+  base: "/WeekFlow/",
   plugins: [
     react(),
     VitePWA({
@@ -15,10 +16,11 @@ export default defineConfig({
         theme_color: "#111827",
         background_color: "#f8fafc",
         display: "standalone",
-        start_url: "/",
+        start_url: "/WeekFlow/",
+        scope: "/WeekFlow/",
         icons: [
-          { src: "/pwa-192x192.png", sizes: "192x192", type: "image/png" },
-          { src: "/pwa-512x512.png", sizes: "512x512", type: "image/png" }
+          { src: "/WeekFlow/pwa-192x192.png", sizes: "192x192", type: "image/png" },
+          { src: "/WeekFlow/pwa-512x512.png", sizes: "512x512", type: "image/png" }
         ]
       },
       workbox: {

@@ -40,4 +40,6 @@ export async function updateActivity(id: string, input: ActivityInput) {
 export async function deleteActivity(id: string) { const current = await activityRepository.getById(id); await activityRepository.remove(id); if (current?.recurrenceId) await recurrenceRepository.remove(current.recurrenceId); }
 export async function deleteRecurringSeries(id: string) { const current = await activityRepository.getById(id); if (!current?.recurrenceId) throw new Error('A atividade não pertence a uma série recorrente.'); await activityRepository.remove(id); await recurrenceRepository.remove(current.recurrenceId); }
 export async function rescheduleActivity(id: string, date: string, startTime: string, endTime: string) { await activityRepository.update(id, { date, startTime, endTime }); }
+export function isRecurringActivity(activity: Activity): boolean { return Boolean(activity.recurrenceId); }
+
 export function dateKey(date: Date) { return format(date, 'yyyy-MM-dd'); }
