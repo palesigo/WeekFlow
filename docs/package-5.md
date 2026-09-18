@@ -11,6 +11,8 @@
 - Mantém-se a lógica de recorrências dinâmicas: as ocorrências não são duplicadas no IndexedDB.
 - O formulário de atividade permite selecionar nenhuma, uma ou várias pessoas.
 - O formulário indica quantas pessoas estão selecionadas.
+- A criação e gestão de pessoas passa a ser feita em **Definições → Pessoas**, evitando criar pessoas acidentalmente dentro de uma atividade.
+- É possível ativar/desativar pessoas; a desativação mantém o histórico das atividades.
 - Pessoas associadas passam a aparecer no calendário semanal, vista mensal, Hoje e impressão.
 - Impressão semanal em A4 horizontal; mensal e anual em A4 vertical.
 - Workflow de GitHub Pages incluído, com Node 24.
